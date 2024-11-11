@@ -9,8 +9,8 @@ Matlab examples run in Matlab 2023a or higher.
 
 - Examples require that MultiParEig - Toolbox for multiparameter and singular eigenvalue problems
  is installed. You can download it from a Matlab File Central Exchange (https://www.mathworks.com/matlabcentral/fileexchange/47844-multipareig). The examples were computed using Version 2.8.0.0.
-- Some examples require that Advanpix MultiPrecision Toolbox (https://www.advanpix.com/) is installed. The examples were computed using Version 5.3.2.15744.
+- Some examples require that Advanpix Multiprecision Computing Toolbox (https://www.advanpix.com/) is installed. The examples were computed using Version 5.3.2.15744.
 
-## Numerical experiments for synthetic data
+## Numerical experiments
 
-To reproduce numerical results from the paper, run m-files Example1_Intro.m, ..., Example11_QEP.
+To reproduce numerical results from the paper, use the files Example1_Intro, ..., Example11_QEP.
