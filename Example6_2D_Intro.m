@@ -3,6 +3,13 @@
 %
 % This example is taken from Lu, Su, Bai: SIMAX 45 (2024) 1455-1486
 
+% -----------------------------------------------------------------------
+% next setting increases chances of reproducible results 
+% comment it if speed is more important then reproducibility
+maxNumCompThreads(1); % could 
+rng(1,'twister')
+% -----------------------------------------------------------------------
+
 A = [2 0 1;0 0 1;1 1 0];
 C = -eye(3);
 B = -[1 0 1;0 1 1;1 1 0];
@@ -32,4 +39,5 @@ hold on
 plot(lambdar,mur,'.r','MarkerSize',40)
 hold off
 axis([0 2 -3 3])
-
+xlabel('\lambda')
+ylabel('\mu')

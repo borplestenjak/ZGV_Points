@@ -36,7 +36,9 @@ end
 pl = kron(ones(n,1),lam);
 scatter(pl(:),real(H(:)),15,abs(imag(H(:))),'filled')
 hold on
-plot(lambdar,mur,'.k','MarkerSize',40)
+plot(lambdar,mur,'ok','MarkerSize',14,'MarkerFaceColor','w')
 plot(lambdarZGV,murZGV,'.r','MarkerSize',40)
 hold off
 axis([-1 1 -1 1])
+xlabel('\lambda')
+ylabel('\mu')

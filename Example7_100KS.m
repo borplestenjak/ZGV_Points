@@ -4,6 +4,13 @@
 
 % Bor Plestenjak
 
+% -----------------------------------------------------------------------
+% next setting increases chances of reproducible results 
+% comment it if speed is more important then reproducibility
+maxNumCompThreads(1); % could 
+rng(1,'twister')
+% -----------------------------------------------------------------------
+
 n = 100;
 
 A = 5*eye(n)+diag(ones(n-2,1),2)+diag(ones(n-2,1),-2);
@@ -28,17 +35,13 @@ end
 PlotSettings
 
 disp('Computing eigencurves')
-% we use higher precision so that eigencurves look smooth
-MA = mp(A);
-MB = mp(B);
-MC = mp(C);
 n = size(A,1);
 if 1==1
     pts = 2000;
-    lam = linspace(mp(-0.5),mp(0.5),pts);
+    lam = linspace(-0.5,0.5,pts);
     H = [];
     for k = 1:pts
-       H(:,k) = double(eig(MA-lam(k)*MB,MC)); 
+       H(:,k) = double(eig(A-lam(k)*B,C)); 
     end
     pl = kron(ones(n,1),double(lam));
     scatter(pl(:),real(H(:)),5,abs(imag(H(:))),'filled')

@@ -4,6 +4,13 @@
 
 % Bor Plestenjak
 
+% -----------------------------------------------------------------------
+% next setting increases chances of reproducible results 
+% comment it if speed is more important then reproducibility
+maxNumCompThreads(1); % could 
+rng(1,'twister')
+% -----------------------------------------------------------------------
+
 n = 100;
 
 A = 5*eye(n)+diag(ones(n-2,1),2)+diag(ones(n-2,1),-2);
@@ -17,15 +24,16 @@ target = [0 5];
 neigs = 8;
 opts.use_jd = 1;
 opts.target = target;
-opts.neigs = neigs + 5;
+opts.neigs = neigs + 4;
 opts.delta = delta;
 opts_jd = [];
 opts_jd.harmonic = 1;
-opts_jd.innersteps = 3;
-opts_jd.showinfo = 1;
-opts_jd.minsize = 10;
-opts_jd.maxsize = 15;
+opts_jd.innersteps = 5;
+opts_jd.showinfo = 2;
+opts_jd.minsize = 2;
+opts_jd.maxsize = 8;
 opts_jd.target = target;
+opts_jd.refine = 1;
 
 A2 = A;
 B2 = (1+delta)*B;
@@ -33,7 +41,7 @@ C2 = C;
 
 opts_jd.M1 = inv(A-target(1)*B-target(2)*C);
 opts_jd.M2 = inv(A2-target(1)*B2-target(2)*C2);
-opts_jd.maxsteps = 600;
+opts_jd.maxsteps = 800;
 opts.opts_jd = opts_jd;
 
 rng(1)
@@ -46,19 +54,15 @@ end
 PlotSettings
 
 disp('Computing eigencurves')
-% we use higher precision so that eigencurves look smooth
-MA = mp(A);
-MB = mp(B);
-MC = mp(C);
 n = size(A,1);
 if 1==1
     pts = 2000;
-    lam = linspace(mp(-0.25),mp(0.25),pts);
+    lam = linspace(-0.25,0.25,pts);
     H = [];
     for k = 1:pts
-       H(:,k) = double(eig(MA-lam(k)*MB,MC)); 
+       H(:,k) = eig(A-lam(k)*B,C); 
     end
-    pl = kron(ones(n,1),double(lam));
+    pl = kron(ones(n,1),lam);
     scatter(pl(:),real(H(:)),5,abs(imag(H(:))),'filled')
     axis([-0.25 0.25 4.75 5.25])
     hold on
@@ -66,6 +70,8 @@ if 1==1
     hold off
     legend('eigencurves','ZGV and 2D points','target')
 end
+xlabel('\lambda')
+ylabel('\mu')
 
 dif = [lambda3 mu3]-target;
 [~,ord] = sort(diag(dif*dif'));

@@ -3,6 +3,13 @@
 
 % Bor Plestenjak 2024
 
+% -----------------------------------------------------------------------
+% next setting increases chances of reproducible results 
+% comment it if speed is more important then reproducibility
+maxNumCompThreads(1); % could 
+rng(1,'twister')
+% -----------------------------------------------------------------------
+
 A = [ 3  0;  0  0];
 B = [ 0  1; -1 -1];
 C = [-2 -2;  2  0];
@@ -55,3 +62,5 @@ plot(lambdar,mur,'.r','MarkerSize',40)
 hold off
 axis equal
 axis([-0.5 4.5 -1 2])
+xlabel('\lambda')
+ylabel('\mu')

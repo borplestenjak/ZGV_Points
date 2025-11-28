@@ -36,7 +36,16 @@ end
 pl = kron(ones(n,1),lam);
 scatter(pl(:),real(H(:)),15,abs(imag(H(:))),'filled')
 hold on
-plot(lambdar,mur,'.k','MarkerSize',40)
+
+% find 2D point that are not ZGV points
+g = zeros(length(lambdar),1);
+for k = 1:length(lambdar)
+    g(k) = is_in_set([lambdarZGV murZGV],[lambdar(k) mur(k)]);
+end
+ind2 = find(g==0);
 plot(lambdarZGV,murZGV,'.r','MarkerSize',40)
+plot(lambdar(ind2),mur(ind2),'ok','MarkerSize',14,'MarkerFaceColor','w')
 hold off
 axis([-3 1 -4 4])
+xlabel('\lambda')
+ylabel('\mu')

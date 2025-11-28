@@ -1,6 +1,6 @@
-function [lambda, mu, mult] = critical_points(A,B,C,opts)
+function [lambda, mu] = critical_points(A,B,C,opts)
 
-% [lambda, mu, mult] = critical_points(A,B,C,opts) finds critical points (lambda,mu) 
+% [lambda, mu] = critical_points(A,B,C,opts) finds critical points (lambda,mu) 
 % for the eigenvalue problem (A + lambda*B + mu*C)x = 0, such that 
 % a) 2D points: there exist nonzero vectors x and y such that 
 %    (A + lambda*B + mu*C)*x=0, y'*(A + lambda*B + mu*C)=0, y'*B*x=0
@@ -17,22 +17,21 @@ function [lambda, mu, mult] = critical_points(A,B,C,opts)
 %   - sc_steps (0): steps of staircase algorithm for an optional initial
 %     reduction of the delta matrices (when it works it might speed up the computation)
 %   - membtol (1e-6): treshold for preventing to output multiple instances of critical points
-%   - YBXtol (1e-6): treshold for checking the condition y'*B*x=0 for the 2D point
-%   - multtol (1e-4): treshold for identifying the multiplicity of mu as an eigenvalus of (A+lambda*B,-C)
+%   - multtol (1e-4): treshold for identifying a possible multiple eigenvalue
+%   - YBXtol (1e-6): treshold for the condition |y'*B*x| < YBXtol*norm(B) for the 2D point
+%   - YCXtol (1e-6): treshold for the condition |y'*C*x| > YCXtol*norm(C) for the ZGV point
+%   - GStol  (1e-6): treshold for the condition sigma(n-1) > GStol*sigma(1) for geometric simplicity
+%   - GN_refine (0): set to 1 to apply Gauss-Newton refinement of computed points
 %   - other options for singgep or staircase_step_cr_np
 %   - inviter (1): use inverse iteration for eigenvectors or slow svd (0)
-%   - refine (1): Newton refinement steps to improve the accuracy of simple
-%     eigenvalues of a regular MEP - requires computation of eigenvectors 
-%   - refineeps (eps): relative tolerance for Newton refinement
 %
 % Output:
-%   - lambda, mu: vectors with critical points
-%   - mult: multiplicities of mu as an eigenvalue of A+lambda*B+mu*C for a fixed lambda
+%   - lambda, mu: coordinates of critical points
 
 % This is Algorithm 1 in B. Plestenjak: On properties and numerical 
 % computation of critical points of eigencurves of bivariate matrix pencils
 
-% Bor Plestenjak 2024
+% Bor Plestenjak 2024, revised in 2025
 
 if nargin<4, opts=[]; end
 
@@ -46,7 +45,12 @@ if isfield(opts,'goal'),      goal = opts.goal;         else,  goal = '2D';    e
 if isfield(opts,'sc_steps'),  sc_steps = opts.sc_steps; else,  sc_steps = 0;   end
 if isfield(opts,'membtol'),   membtol = opts.membtol;   else,  membtol = 1e-6; end
 if isfield(opts,'YBXtol'),    YBXtol = opts.YBXtol;     else,  YBXtol = 1e-6;  end
+if isfield(opts,'YCXtol'),    YCXtol = opts.YCXtol;     else,  YCXtol = 1e-6;  end
+if isfield(opts,'GStol'),     GStol = opts.GStol;       else,  GStol = 1e-6;   end
+if isfield(opts,'GN_refine'), GN_refine = opts.GN_refine; else,  GN_refine   = 0;   end
 if isfield(opts,'multtol'),   multtol = opts.multtol;   else,  multtol = 1e-4; end
+if ~isfield(opts,'sep'),      opts.sep = 1e2*sqrt(eps(class_t)); end
+if ~isfield(opts,'sepinf'),   opts.sepinf = 1e-1*eps(class_t); end
 
 % Make sure all inputs are of the same numeric type.
 if ~isa(A,class_t), A = numeric_t(A,class_t); end
@@ -81,35 +85,65 @@ end
 % lambda's in the GEP and checking the 2D criteria for the computed mu's. 
 lambda_pos = singgep(Delta1,Delta0,opts);
 m = length(lambda_pos);
-normB = norm(B,'fro');
+normB = norm(B);
+normC = norm(C);
 solution = [];
-multiplicities = [];
 for k = 1:m
     M = A + lambda_pos(k)*B;
     [X,D,Y] = eig(M,-C);
     mu_pos = diag(D);
     for j = 1:length(mu_pos)
         if isfinite(mu_pos(j))
-            if ~is_in_set(solution,[lambda_pos(k) mu_pos(j)],membtol)
-                % we estimate multiplicity from the number of close eigenvalues
-                pos = abs(mu_pos-mu_pos(j))<multtol*(1+abs(mu_pos(j)));
-                alg_mult = sum(pos);
-                % condition y'*B*x = 0
-                if abs(Y(:,j)'*B*X(:,j))/(norm(Y(:,j))*norm(X(:,j)))<YBXtol*normB 
-                    if strcmp(goal,'2D') || ((strcmp(goal,'ZGV') && alg_mult==1)) 
-                        solution = [solution; [lambda_pos(k) mu_pos(j)]];
-                        multiplicities = [multiplicities; alg_mult];
-                    end
-                else
-                    if strcmp(goal,'2D') && (alg_mult>1)
-                        % we estimate geometric multiplicity from the rank of
-                        % the matrix composed of eigenvectors
-                        subX = X(:,find(pos==1));
-                        if rank(subX)>1
-                            % geometric multiplicity of mu_0 is larger than 1, this is a 2D point   
-                            solution = [solution; [lambda_pos(k) mu_pos(j)]];
-                            multiplicities = [multiplicities; alg_mult];
+            x1 = X(:,j);
+            y1 = Y(:,j);
+            lambda_cand = lambda_pos(k);
+            mu_cand = mu_pos(j);
+            condB = abs(y1'*B*x1)/(norm(y1)*norm(x1));
+            condC = abs(y1'*C*x1)/(norm(y1)*norm(x1));
+            if ~is_in_set(solution,[lambda_cand mu_cand],membtol)
+                add_solution = 0;
+                if strcmp(goal,'ZGV')
+                    % if we are computing ZGV points, we first check if |y'*B*x|=0 and |y'*C*x| is nonzero
+                    if (condB<YBXtol*normB) && (condC>YCXtol*normC)
+                        % if this is true, we additionally check if mu is geometrically simple
+                        s = svd(A + lambda_cand*B + mu_cand*C);
+                        if s(n-1) > GStol*s(1)
+                            add_solution = 1;
                         end
+                    end
+                end
+                if strcmp(goal,'2D')
+                    % if we are computing 2D points, we check that either |y'*B*x|=0 or 
+                    % geometric multiplicity is at least two
+                    if condB < YBXtol*normB
+                        add_solution = 1;
+                    else
+                        % we estimate multiplicity from the number of close eigenvalues
+                        pos = abs(mu_pos-mu_cand)<multtol*(1+abs(mu_cand));
+                        alg_mult = sum(pos);
+                        if alg_mult>1
+                            s = svd(A + lambda_cand*B + mu_cand*C);
+                            if s(n-1) <= GStol*s(1)
+                                add_solution = 1;
+                            end
+                        end
+                    end
+                end
+                if add_solution
+                    if GN_refine                      
+                        % optional refinement with Gauss-Newton method
+                        [lambda_candC,mu_candC,~,~,flag,err,step] = ZGV_GaussNewton(A,B,C,lambda_cand,mu_cand,x1,y1);
+                        if err(end)<err(1)
+                            lambda_cand = lambda_candC;
+                            mu_cand = mu_candC;
+                            if is_in_set(solution,[lambda_cand mu_cand],membtol)
+                                % additional check of the refined point
+                                add_solution = 0;
+                            end
+                        end
+                    end
+                    if add_solution
+                        solution = [solution; [lambda_cand mu_cand]];
                     end
                 end
             end

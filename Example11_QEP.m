@@ -3,6 +3,13 @@
 
 % Bor Plestenjak 2024
 
+% -----------------------------------------------------------------------
+% next setting increases chances of reproducible results 
+% comment it if speed is more important then reproducibility
+maxNumCompThreads(1); % could 
+rng(1,'twister')
+% -----------------------------------------------------------------------
+
 % We are looking for ZGV points of (lambda^2*L2+lambda*L1+L0+omega^2*M)x=0
 n = 3;
 L2 = [-1  0.5  0;  0.5 -2  0.5;  0  0.5  -3];
@@ -19,7 +26,7 @@ MC = [M zeros(n); zeros(n) zeros(n)];
 indr = find(abs(imag(lambda))<1e-6);
 lambdar = real(lambda(indr));
 mur = real(mu(indr));
-ZGV_points = [lambdar mur]
+ZGV_points_omega = [lambdar mur sqrt(mur)]
 
 PlotSettings
 pts = 1000;
@@ -34,6 +41,8 @@ hold on
 plot(lambdar,sqrt(mur),'.r','MarkerSize',40)
 hold off
 
- axis([-1.5 1.5 0 2])
+axis([-1.5 1.5 0 2])
+xlabel('\lambda')
+ylabel('\omega')
 
 

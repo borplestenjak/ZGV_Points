@@ -4,6 +4,13 @@
 
 % Bor Plestenjak
 
+% -----------------------------------------------------------------------
+% next setting increases chances of reproducible results 
+% comment it if speed is more important then reproducibility
+maxNumCompThreads(1); % could 
+rng(1,'twister')
+% -----------------------------------------------------------------------
+
 n = 10;
 
 A = 5*eye(n)+1*diag(ones(n-2,1),2)+1*diag(ones(n-2,1),-2);
@@ -24,8 +31,7 @@ pl = kron(ones(n,1),lam);
 scatter(pl(:),real(H(:)),8,abs(imag(H(:))),'filled')
 
 % we first compute all critical points using MFRD + Gauss_Newton
-opts.gensize = 0;
-opts.delta = 1e-4*(1+1i);
+opts.delta = 1e-4;
 opts.goal = '2D';
 [lambda0,mu0] = critical_points_MFRD(A,-B,-C,opts); 
 sol0 = [lambda0 mu0];
@@ -35,8 +41,7 @@ lambdar = real(lambda0(indr));
 mur = real(mu0(indr));
 
 % we compute only ZGV points using MFRD + Gauss_Newton
-opts.gensize = 0;
-opts.delta = 1e-4*(1+1i);
+opts.delta = 1e-4;
 opts.goal = 'ZGV';
 [lambda1,mu1] = critical_points_MFRD(A,-B,-C,opts); 
 sol1 = [lambda1 mu1];
@@ -46,7 +51,9 @@ lambdar1 = real(lambda1(indr1));
 mur1 = real(mu1(indr1));
 
 hold on
-    plot(lambdar,mur,'.r','MarkerSize',25)
-    plot(lambdar1,mur1,'.k','MarkerSize',25)
+    plot(lambdar,mur,'.r','MarkerSize',28)
+    plot(lambdar1,mur1,'ok','MarkerSize',7,'MarkerFaceColor','w')
 hold off
 axis([-4 4 -2.5 7.5])
+xlabel('\lambda')
+ylabel('\mu')

@@ -3,6 +3,13 @@
 
 % Bor Plestenjak 2024
 
+% -----------------------------------------------------------------------
+% next setting increases chances of reproducible results 
+% comment it if speed is more important then reproducibility
+maxNumCompThreads(1); % could 
+rng(1,'twister')
+% -----------------------------------------------------------------------
+
 % we set up parameters for bde2mep so that we can get a discretizaton by
 % Chebyshev collocation for the
 % y''(x) - 2*lambda*cos(2x)*y(x)+mu*y(x) = 0
@@ -45,6 +52,8 @@ hold on
 plot(lambdar,mur,'.r','MarkerSize',40)
 hold off
 axis([-80 80 -10 90])
+xlabel('\lambda')
+ylabel('\mu')
 
 % we can iteratively refine the solution using finer discretization
 target = [11 17];
